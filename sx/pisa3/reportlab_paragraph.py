@@ -1093,6 +1093,10 @@ class Paragraph(Flowable):
         lineno = 0
         style = self.style
 
+        # Cache a few things across words.
+        ad_cache = {}
+        sw_cache = {}
+
         #for bullets, work out width and ensure we wrap the right amount onto line one
         _handleBulletWidth(self.bulletText,style,maxWidths)
 
@@ -1107,14 +1111,17 @@ class Paragraph(Flowable):
             f = frags[0]
             fontSize = f.fontSize
             fontName = f.fontName
-            ascent, descent = getAscentDescent(fontName,fontSize)
+            ascent, descent = ad_cache[(fontName, fontSize)] = getAscentDescent(fontName, fontSize)
             words = hasattr(f,'text') and split(f.text, ' ') or f.words
-            spaceWidth = stringWidth(' ', fontName, fontSize, self.encoding)
+            spaceWidth = sw_cache[(fontName, fontSize, self.encoding)] = stringWidth(' ', fontName, fontSize, self.encoding)
             cLine = []
             currentWidth = -spaceWidth   # hack to get around extra space for word 1
             for word in words:
                 #this underscores my feeling that Unicode throughout would be easier!
-                wordWidth = stringWidth(word, fontName, fontSize, self.encoding)
+                sw_cache_key = (fontName, fontSize, self.encoding)
+                if sw_cache_key not in sw_cache:
+                    sw_cache[sw_cache_key] = stringWidth(word, fontName, fontSize, self.encoding)
+                wordWidth = sw_cache[sw_cache_key]
                 newWidth = currentWidth + spaceWidth + wordWidth
                 if newWidth <= maxWidth or not len(cLine):
                     # fit one more on this line
@@ -1149,16 +1156,22 @@ class Paragraph(Flowable):
                 return self.blPara
             n = 0
             words = []
+
             for w in _getFragWords(frags):
                 f=w[-1][0]
                 fontName = f.fontName
                 fontSize = f.fontSize
-                spaceWidth = stringWidth(' ',fontName, fontSize)
+                cache_key = (fontName, fontSize)
+                if cache_key not in sw_cache:
+                    sw_cache[cache_key] = stringWidth(' ', fontName, fontSize)
+                spaceWidth = sw_cache[cache_key]
 
                 if not words:
                     currentWidth = -spaceWidth   # hack to get around extra space for word 1
                     maxSize = fontSize
-                    maxAscent, minDescent = getAscentDescent(fontName,fontSize)
+                    if cache_key not in ad_cache:
+                        ad_cache[cache_key] = getAscentDescent(fontName, fontSize)
+                    maxAscent, minDescent = ad_cache[cache_key]
 
                 wordWidth = w[0]
                 f = w[1][0]
@@ -1176,14 +1189,19 @@ class Paragraph(Flowable):
                     nText = w[1][1]
                     if nText: n += 1
                     fontSize = f.fontSize
+                    ad_cache_key = (f.fontName, fontSize)
                     if calcBounds:
                         cbDefn = getattr(f,'cbDefn',None)
                         if getattr(cbDefn,'width',0):
                             descent,ascent = imgVRange(cbDefn.height,cbDefn.valign,fontSize)
                         else:
-                            ascent, descent = getAscentDescent(f.fontName,fontSize)
+                            if ad_cache_key not in ad_cache:
+                                ad_cache[ad_cache_key] = getAscentDescent(f.fontName, fontSize)
+                            ascent, descent = ad_cache[ad_cache_key]
                     else:
-                        ascent, descent = getAscentDescent(f.fontName,fontSize)
+                        if ad_cache_key not in ad_cache:
+                            ad_cache[ad_cache_key] = getAscentDescent(f.fontName, fontSize)
+                        ascent, descent = ad_cache[ad_cache_key]
                     maxSize = max(maxSize,fontSize)
                     maxAscent = max(maxAscent,ascent)
                     minDescent = min(minDescent,descent)
@@ -1220,14 +1238,19 @@ class Paragraph(Flowable):
                         g.text=i[1]
                         words.append(g)
                         fontSize = g.fontSize
+                        ad_cache_key = (g.fontName, fontSize)
                         if calcBounds:
                             cbDefn = getattr(g,'cbDefn',None)
                             if getattr(cbDefn,'width',0):
                                 descent,ascent = imgVRange(cbDefn.height,cbDefn.valign,fontSize)
                             else:
-                                ascent, descent = getAscentDescent(g.fontName,fontSize)
+                                if ad_cache_key not in ad_cache:
+                                    ad_cache[ad_cache_key] = getAscentDescent(g.fontName, fontSize)
+                                ascent, descent = ad_cache[ad_cache_key]
                         else:
-                            ascent, descent = getAscentDescent(g.fontName,fontSize)
+                            if ad_cache_key not in ad_cache:
+                                ad_cache[ad_cache_key] = getAscentDescent(g.fontName, fontSize)
+                            ascent, descent = ad_cache[ad_cache_key]
                         maxSize = max(maxSize,fontSize)
                         maxAscent = max(maxAscent,ascent)
                         minDescent = min(minDescent,descent)
@@ -1260,14 +1283,19 @@ class Paragraph(Flowable):
                     n = 1
                     g = f.clone()
                     maxSize = g.fontSize
+                    ad_cache_key = (g.fontName, maxSize)
                     if calcBounds:
                         cbDefn = getattr(g,'cbDefn',None)
                         if getattr(cbDefn,'width',0):
                             minDescent,maxAscent = imgVRange(cbDefn.height,cbDefn.valign,maxSize)
                         else:
-                            maxAscent, minDescent = getAscentDescent(g.fontName,maxSize)
+                            if ad_cache_key not in ad_cache:
+                                ad_cache[ad_cache_key] = getAscentDescent(g.fontName, maxSize)
+                            maxAscent, minDescent = ad_cache[ad_cache_key]
                     else:
-                        maxAscent, minDescent = getAscentDescent(g.fontName,maxSize)
+                        if ad_cache_key not in ad_cache:
+                            ad_cache[ad_cache_key] = getAscentDescent(g.fontName, maxSize)
+                        maxAscent, minDescent = ad_cache[ad_cache_key]
                     words = [g]
                     g.text = w[1][1]
 
@@ -1276,14 +1304,19 @@ class Paragraph(Flowable):
                         g.text=i[1]
                         words.append(g)
                         fontSize = g.fontSize
+                        ad_cache_key = (g.fontName, fontSize)
                         if calcBounds:
                             cbDefn = getattr(g,'cbDefn',None)
                             if getattr(cbDefn,'width',0):
                                 descent,ascent = imgVRange(cbDefn.height,cbDefn.valign,fontSize)
                             else:
-                                ascent, descent = getAscentDescent(g.fontName,fontSize)
+                                if ad_cache_key not in ad_cache:
+                                    ad_cache[ad_cache_key] = getAscentDescent(g.fontName, fontSize)
+                                maxAscent, minDescent = ad_cache[ad_cache_key]
                         else:
-                            ascent, descent = getAscentDescent(g.fontName,fontSize)
+                            if ad_cache_key not in ad_cache:
+                                ad_cache[ad_cache_key] = getAscentDescent(g.fontName, fontSize)
+                            maxAscent, minDescent = ad_cache[ad_cache_key]
                         maxSize = max(maxSize,fontSize)
                         maxAscent = max(maxAscent,ascent)
                         minDescent = min(minDescent,descent)

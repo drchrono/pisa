@@ -1,7 +1,6 @@
 CHANGELOG.txt
 LICENSE.txt
 PKG-INFO
-README.txt
 VERSION.txt
 ez_setup.py
 pisa.py
