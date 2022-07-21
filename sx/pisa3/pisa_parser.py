@@ -279,7 +279,7 @@ def CSS2Frag(c, kw, isBlock):
             c.frag.bold = 1
         else:
             c.frag.bold = 0
-    for value in toList(c.cssAttr.get("text-decoration", "")):
+    for value in [val for val in toList(c.cssAttr.get("text-decoration", "")) if (val is not NotImplemented and val is not None)]:
         if "underline" in value:
             c.frag.underline = 1
         if "line-through" in value:
