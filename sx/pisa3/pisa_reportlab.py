@@ -634,7 +634,14 @@ class PmlKeepInFrame(KeepInFrame, PmlMaxHeightMixIn):
         availHeight = max(availHeight, 1.0)
         self.maxWidth = availWidth
         self.maxHeight = self.setMaxHeight(availHeight)
-        return KeepInFrame.wrap(self, availWidth, availHeight)
+        # I could probably just return the list comprehension and let the
+        # calling code dereference on the outside, especially since this just
+        # returns a tuple, but I prefer to be explicit. Makes it easier to
+        # find bugs.
+        cur_height, cur_weight = [
+            int(v) for v in KeepInFrame.wrap(self, availWidth, availHeight)
+        ]
+        return cur_height, cur_weight
 
 class PmlTable(Table, PmlMaxHeightMixIn):
 
