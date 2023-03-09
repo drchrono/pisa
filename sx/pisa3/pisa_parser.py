@@ -616,9 +616,14 @@ def pisaParser(src, c, default_css="", xhtml=False, encoding=None, xml_output=No
             src = src.encode(encoding)
         src = pisaTempFile(src, capacity=c.capacity)
 
-    document = parser.parse(
-        src,
-        transport_encoding=encoding)
+    try:
+        # html5lib parser complains if we pass transport_encoding when the
+        # content is already utf-8 (even though we pass utf-8 <>-<>)
+        document = parser.parse(
+            src,
+            transport_encoding=encoding)
+    except TypeError:
+        document = parser.parse(src)
 
     if xml_output:
         xml_output.write(document.toprettyxml(encoding="utf8"))
