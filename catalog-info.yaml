@@ -1,0 +1,25 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: pisa
+  description: 'This is a clone of the legacy package pisa. See http://pypi.python.org/pypi/pisa/
+    for details. pisa: PDF generator using HTML and CSS pisa is a html2pdf converter
+    using the ReportLab Toolkit, the HTML5lib and pyPdf. It supports HTML 5 and CSS
+    2.1 (and some of CSS 3). It is completely written in pure Python so it is platform
+    independent. The main benefit of this tool that a user with Web skills like HTML
+    and CSS is able to generate PDF templates very quickly without learning new technologies.
+    Easy integration into Python frameworks like CherryPy, KID Templating, TurboGears,
+    Django, Zope, Plone, Google AppEngine (GAE) etc. (see ''demo'' folder for examples)'
+  annotations:
+    business-unit: EverHealth
+    github.com/project-slug: drchrono/pisa
+    product: DRC
+spec:
+  type: service
+  lifecycle: production
+  owner: EverHealth
+  implementation:
+    languages:
+    - Python
+    - HTML
+    - CSS
