@@ -172,41 +172,42 @@ def pisaDocument(
             doc.build(c.story)
 
         # Add watermarks
-        if pyPdf:                      
-            for bgouter in c.pisaBackgroundList:     
-                          
-                # If we have at least one background, then lets do it
-                if bgouter:
+        if any(c.pisaBackgroundList):
+            if pyPdf:                      
+                for bgouter in c.pisaBackgroundList:     
+                            
+                    # If we have at least one background, then lets do it
+                    if bgouter:
+                        
+                        istream = out                    
+                        try:
+                            output = pyPdf.PdfFileWriter()
+                            input1 = pyPdf.PdfFileReader(istream)
+                            ctr = 0
+                            for bg in c.pisaBackgroundList:                            
+                                page = input1.getPage(ctr)
+                                if bg and not bg.notFound() and (bg.mimetype=="application/pdf"):
+                                    bginput = pyPdf.PdfFileReader(bg.getFile())
+                                    pagebg = bginput.getPage(0)
+                                    pagebg.mergePage(page)
+                                    page = pagebg
+                                else:
+                                    log.warn(c.warning("Background PDF %s doesn't exist.", bg))
+                                output.addPage(page)
+                                ctr += 1
+                            out = pisaTempFile(capacity=c.capacity)
+                            output.write(out)
+                            # data = sout.getvalue()
+                        except Exception:
+                            log.exception(c.error("pyPDF error"))   
+                            if raise_exception:
+                                raise
                     
-                    istream = out                    
-                    try:
-                        output = pyPdf.PdfFileWriter()
-                        input1 = pyPdf.PdfFileReader(istream)
-                        ctr = 0
-                        for bg in c.pisaBackgroundList:                            
-                            page = input1.getPage(ctr)
-                            if bg and not bg.notFound() and (bg.mimetype=="application/pdf"):
-                                bginput = pyPdf.PdfFileReader(bg.getFile())
-                                pagebg = bginput.getPage(0)
-                                pagebg.mergePage(page)
-                                page = pagebg
-                            else:
-                                log.warn(c.warning("Background PDF %s doesn't exist.", bg))
-                            output.addPage(page)
-                            ctr += 1
-                        out = pisaTempFile(capacity=c.capacity)
-                        output.write(out)
-                        # data = sout.getvalue()
-                    except Exception:
-                        log.exception(c.error("pyPDF error"))   
-                        if raise_exception:
-                            raise
-                 
-                    
-                    # Found a background? So leave loop after first occurence
-                    break
-        else:
-            log.warn(c.warning("pyPDF not installed!"))
+                        
+                        # Found a background? So leave loop after first occurence
+                        break
+            else:
+                log.warn(c.warning("pyPDF not installed!"))
 
         # In web frameworks for debugging purposes maybe an output of
         # errors in a PDF is preferred        
